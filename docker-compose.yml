@@ -15,11 +15,16 @@ services:
     image: postgres:13
     environment:
       POSTGRES_DB: productdb
-      POSTGRES_USER: youruser
-      POSTGRES_PASSWORD: yourpassword
+      POSTGRES_USER: philip
+      POSTGRES_PASSWORD: 123456
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
     environment:
@@ -28,6 +33,11 @@ services:
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
   redis:
     image: redis:6
     restart: always
