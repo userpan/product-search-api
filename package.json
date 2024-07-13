@@ -6,12 +6,16 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "sync-es": "node scripts/syncToES.js",
+    "create-es-index": "node scripts/createESIndex.js"
   },
   "dependencies": {
-    "@elastic/elasticsearch": "^8.14.0",
+    "@elastic/elasticsearch": "^7.14.0",
+    "dotenv": "^16.4.5",
     "ioredis": "^5.4.1",
     "next": "14.2.4",
+    "pg": "^8.12.0",
     "react": "^18",
     "react-dom": "^18",
     "xstate": "^5.14.0"
