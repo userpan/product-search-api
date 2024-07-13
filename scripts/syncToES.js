@@ -58,21 +58,21 @@ async function syncData() {
       const body = batch.flatMap(doc => [
         { index: { _index: 'products', _id: doc.id } },
         {
-          sku: doc.sku,
-          title: doc.title,
-          description: doc.description,
+          sku: doc.sku || '',
+          title: doc.title || '',
+          description: doc.description || '',
           created_at: doc.created_at,
           updated_at: doc.updated_at
         }
       ]);
 
       try {
-        console.log(`Indexing batch ${i / batchSize + 1}...`);
+        console.log(`Indexing batch ${Math.floor(i / batchSize) + 1}...`);
         const bulkResponse = await esClient.bulk({ body: body, refresh: true });
         
-        if (bulkResponse.errors) {
+        if (bulkResponse.body.errors) {
           console.log('Bulk operation had errors');
-          const erroredDocuments = bulkResponse.items.filter(item => item.index && item.index.error);
+          const erroredDocuments = bulkResponse.body.items.filter(item => item.index && item.index.error);
           console.log(erroredDocuments);
         } else {
           console.log(`Successfully indexed ${batch.length} items in Elasticsearch`);
