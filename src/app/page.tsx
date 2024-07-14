@@ -29,6 +29,7 @@ export default function Home() {
         <h2 className="text-2xl font-semibold mt-8 mb-4 text-gray-700">API 使用</h2>
         <p className="text-gray-600 mb-2">如需直接使用 API：</p>
         <code className="bg-gray-100 p-2 rounded block mb-4">
+          密钥可以通过请求或控制台看到，切换用户可以看到
           GET /api/search?q=您的搜索关键词&api_key=您的API密钥&page=1
         </code>
         <p className="text-gray-600">
