@@ -1,132 +1,91 @@
+// src/app/api/search/route.ts
 import { Client } from '@elastic/elasticsearch';
 import { NextRequest, NextResponse } from 'next/server';
+import redis from '../../../lib/redis';
+import { Pool } from 'pg';
 
 const client = new Client({
   node: process.env.ELASTICSEARCH_URL
 });
 
-interface SearchResult {
-  id: string;
-  title: string;
-  description: string;
-  sku: string;
-  highlight?: {
-    title?: string[];
-    description?: string[];
-  };
-  [key: string]: any;  // for any additional fields
-}
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL,
+});
 
-interface CategoryBucket {
-  key: string;
-  doc_count: number;
-}
+const ITEMS_PER_PAGE = 12; // 每页显示的项目数
 
-interface SearchResponse {
-  results: SearchResult[];
-  suggestions: string[];
-  categories: { name: string; count: number }[];
-  total: number;
-}
-
-export async function GET(request: NextRequest) {
+export const GET = async (request: NextRequest) => {
   const searchParams = request.nextUrl.searchParams;
   const query = searchParams.get('q');
+  const apiKey = searchParams.get('api_key');
+  const page = parseInt(searchParams.get('page') || '1', 10);
 
   if (!query) {
-    return NextResponse.json({ error: 'Query parameter is required' }, { status: 400 });
+    return NextResponse.json({ error: '查询参数是必需的' }, { status: 400 });
+  }
+
+  if (!apiKey) {
+    return NextResponse.json({ error: 'API密钥是必需的' }, { status: 400 });
   }
 
   try {
+    // 验证API密钥
+    const pgClient = await pool.connect();
+    const userResult = await pgClient.query('SELECT id FROM Users WHERE api_key = $1 AND is_active = TRUE', [apiKey]);
+    pgClient.release();
+
+    if (userResult.rows.length === 0) {
+      return NextResponse.json({ error: '无效的API密钥' }, { status: 401 });
+    }
+
+    const userId = userResult.rows[0].id;
+
+    // 检查使用限制
+    const today = new Date().toISOString().split('T')[0];
+    const usageKey = `usage:${userId}:${today}`;
+    const usageCount = await redis.incr(usageKey);
+
+    if (usageCount > 100) {
+      console.log('已超过每日使用限制，现在使用次数是：', usageCount)
+      return NextResponse.json({ error: '已超过每日使用限制' }, { status: 429 });
+    }
+
+    // 设置使用键的过期时间（24小时）
+    await redis.expire(usageKey, 86400);
+
+    // 执行搜索
     const result = await client.search({
       index: 'products',
       body: {
         query: {
-          bool: {
-            should: [
-              {
-                multi_match: {
-                  query: query,
-                  fields: ['title^3', 'description^2', 'sku'],
-                  type: 'best_fields',
-                  fuzziness: 'AUTO',
-                  prefix_length: 1
-                }
-              },
-              {
-                match_phrase_prefix: {
-                  title: {
-                    query: query,
-                    slop: 3,
-                    max_expansions: 10
-                  }
-                }
-              }
-            ]
+          multi_match: {
+            query: query,
+            fields: ['title^2', 'description', 'sku']
           }
         },
-        suggest: {
-          text: query,
-          title_suggestion: {
-            term: {
-              field: 'title',
-              suggest_mode: 'always'
-            }
-          },
-          description_suggestion: {
-            term: {
-              field: 'description',
-              suggest_mode: 'always'
-            }
-          }
-        },
-        highlight: {
-          fields: {
-            title: {},
-            description: {}
-          }
-        },
-        aggs: {
-          categories: {
-            terms: {
-              field: 'category.keyword',
-              size: 5
-            }
-          }
-        },
-        size: 20
+        from: (page - 1) * ITEMS_PER_PAGE,
+        size: ITEMS_PER_PAGE
       }
     });
 
-    const hits = result.body.hits.hits.map((hit: any): SearchResult => ({
+    const hits = result.body.hits.hits.map((hit: any) => ({
       id: hit._id,
-      ...hit._source,
-      highlight: {
-        title: hit.highlight?.title,
-        description: hit.highlight?.description
-      }
+      ...hit._source
     }));
 
-    const suggestions = [
-      ...(result.body.suggest.title_suggestion?.[0]?.options ?? []),
-      ...(result.body.suggest.description_suggestion?.[0]?.options ?? [])
-    ].map((option: any) => option.text);
+    const totalHits = result.body.hits.total.value;
+    const totalPages = Math.ceil(totalHits / ITEMS_PER_PAGE);
 
-    const categories = (result.body.aggregations?.categories?.buckets ?? []).map((bucket: CategoryBucket) => ({
-      name: bucket.key,
-      count: bucket.doc_count
-    }));
-
-    const response: SearchResponse = {
+    return NextResponse.json({
       results: hits,
-      suggestions: [...new Set(suggestions)],
-      categories,
-      total: result.body.hits.total.value
-    };
-
-    return NextResponse.json(response);
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalHits: totalHits
+      }
+    });
   } catch (error) {
-    console.error('Search error:', error);
-    return NextResponse.json({ error: 'An error occurred during the search' }, { status: 500 });
+    console.error('搜索错误:', error);
+    return NextResponse.json({ error: '搜索过程中发生错误' }, { status: 500 });
   }
 }

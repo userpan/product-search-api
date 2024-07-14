@@ -10,7 +10,7 @@ const client = new Client({
 
 console.log('Elasticsearch URL:', process.env.ELASTICSEARCH_URL);
 
-async function createIndex() {
+const createIndex = async () => {
   const index = 'products';
   
   try {

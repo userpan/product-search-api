@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 产品搜索引擎
 
-## Getting Started
+## 项目简介
 
-First, run the development server:
+这是一个基于 Next.js 和 Elasticsearch 的高效产品搜索引擎。它提供了强大的全文搜索功能，支持模糊匹配和相关性排序，适用于大规模产品数据库的快速检索。
 
-```bash
+## 主要特性
+
+- 全文搜索：支持对产品标题、描述和 SKU 进行搜索
+- 模糊匹配：容忍拼写错误和轻微的单词变化
+- 相关性排序：结果按相关性得分排序，考虑字段权重、词频等因素
+- 多字段搜索：使用 Elasticsearch 的 multi_match 查询
+- 分页功能：支持大量搜索结果的高效浏览
+- API 限流：基于滑动窗口的使用限制，防止 API 滥用
+- 响应式设计：适配移动端和桌面端
+- 实时同步：产品数据实时同步到 Elasticsearch
+
+## 技术栈
+
+- 前端：Next.js 14, React, TypeScript
+- 后端：Next.js API 路由
+- 数据库：PostgreSQL（用户数据和 API 密钥）
+- 搜索引擎：Elasticsearch
+- 缓存和限流：Redis
+- 样式：Tailwind CSS
+- 部署：Docker, 阿里云
+
+## 快速开始
+
+1. 克隆仓库
+git clone [your-repository-url]
+
+2. 安装依赖
+npm install
+
+3. 设置环境变量
+创建 `.env.local` 文件并添加必要的环境变量（参考 `.env.example`）
+
+4. 运行开发服务器
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. 访问 `http://localhost:3000` 查看应用
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## API 使用
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+API 端点：`/api/search`
 
-## Learn More
+示例请求：
+GET /api/search?q=您的搜索关键词&api_key=您的API密钥&page=1
 
-To learn more about Next.js, take a look at the following resources:
+注意：每个用户在任意 24 小时内限制使用 100 次搜索。超过此限制将返回 429 错误。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 搜索功能详解
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+- 支持部分匹配和完整匹配
+- 标题字段权重较高（^2），提高相关结果的排序
+- 使用 Elasticsearch 的模糊匹配功能，提高搜索容错性
+- 搜索结果考虑字段权重、词频和倒排文档频率等因素
 
-## Deploy on Vercel
+## 部署
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+项目使用 Docker 进行容器化，并部署在阿里云服务器上。详细的部署步骤请参考 `DEPLOYMENT.md` 文件。
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## 贡献
+
+欢迎提交 Pull Requests 来改进这个项目。对于重大更改，请先开 issue 讨论您想要改变的内容。
+
+## 许可证
+
+[MIT License](LICENSE)

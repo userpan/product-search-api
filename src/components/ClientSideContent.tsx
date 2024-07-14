@@ -2,23 +2,35 @@
 
 import { useState, useEffect } from 'react';
 
-function decodeHTMLEntities(text: string) {
-  if (typeof window === 'undefined') return text; // 服务器端返回原始文本
+const decodeHTMLEntities = (text: string) => {
+  if (typeof window === 'undefined') return text;
   const textArea = document.createElement('textarea');
   textArea.innerHTML = text;
   return textArea.value;
 }
 
+const truncateText = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  return text.substr(0, maxLength) + '...';
+}
+
 interface ClientSideContentProps {
   html: string;
+  maxLength?: number;
 }
 
-export default function ClientSideContent({ html }: ClientSideContentProps) {
-  const [decodedHtml, setDecodedHtml] = useState(html);
+const ClientSideContent = ({ html, maxLength }: ClientSideContentProps) => {
+  const [processedHtml, setProcessedHtml] = useState(html);
 
   useEffect(() => {
-    setDecodedHtml(decodeHTMLEntities(html));
-  }, [html]);
+    let decodedText = decodeHTMLEntities(html);
+    if (maxLength) {
+      decodedText = truncateText(decodedText, maxLength);
+    }
+    setProcessedHtml(decodedText);
+  }, [html, maxLength]);
 
-  return <div dangerouslySetInnerHTML={{ __html: decodedHtml }} />;
+  return <div dangerouslySetInnerHTML={{ __html: processedHtml }} />;
 }
+
+export default ClientSideContent;

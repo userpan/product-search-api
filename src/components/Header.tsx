@@ -1,5 +1,10 @@
+// src/components/Header.tsx
+"use client";
+
 import Image from 'next/image';
+import Link from 'next/link';
 import SearchBar from './SearchBar';
+import UserDropdown from './UserDropdown';
 
 export default function Header() {
   return (
@@ -9,16 +14,18 @@ export default function Header() {
           <div className="container mx-auto px-4">
             <nav className="flex items-center justify-between h-[75px]">
               <div className="flex-1 flex justify-center">
-                <Image 
-                  src="/logo-wb.png" 
-                  alt="Dropshipzone Logo" 
-                  width={134} 
-                  height={65} 
-                  className="object-contain"
-                />
+                <Link href="/">
+                  <Image 
+                    src="/logo-wb.png" 
+                    alt="Dropshipzone Logo" 
+                    width={134} 
+                    height={65} 
+                    className="object-contain cursor-pointer"
+                  />
+                </Link>
               </div>
               <div>
-                <a href="#" className="hover:underline">CHANGE USER</a>
+                <UserDropdown />
               </div>
             </nav>
           </div>

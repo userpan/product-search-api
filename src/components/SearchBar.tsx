@@ -2,10 +2,12 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useApiKey } from '../contexts/ApiKeyContext';
 
 const SearchBar = () => {
   const [query, setQuery] = useState('');
   const router = useRouter();
+  const { apiKey } = useApiKey();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

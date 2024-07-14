@@ -20,7 +20,7 @@ const esClient = new ESClient({
   sniffInterval: false
 });
 
-async function createIndexIfNotExists() {
+const createIndexIfNotExists = async () => {
   try {
     const indexExists = await esClient.indices.exists({ index: 'products' });
     if (!indexExists.body) {
@@ -35,7 +35,7 @@ async function createIndexIfNotExists() {
   }
 }
 
-async function syncData() {
+const syncData = async () => {
   try {
     console.log('Pinging Elasticsearch...');
     const pingResult = await esClient.ping();
